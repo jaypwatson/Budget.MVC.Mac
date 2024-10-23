@@ -100,6 +100,30 @@ var document = window.document;
 		noModule: true
 	};
 
+	/**
+	 * Evaluates a given JavaScript code string in the context of a specified document node.
+	 * This function creates a script element, sets its content to the provided code,
+	 * and appends it to the document's head to execute it. After execution, the script
+	 * element is removed from the document.
+	 *
+	 * @param {string} code - The JavaScript code to be evaluated.
+	 * @param {Node} [node] - An optional DOM node from which to copy attributes to the script element.
+	 * @param {Document} [doc=document] - An optional document context in which to evaluate the code.
+	 *                                      Defaults to the current document if not provided.
+	 *
+	 * @throws {Error} Throws an error if the code cannot be evaluated or if there are issues
+	 *                 with the provided node or document.
+	 *
+	 * @example
+	 * // Example usage of DOMEval
+	 * DOMEval("console.log('Hello, World!');");
+	 *
+	 * @example
+	 * // Example with a node that has attributes
+	 * var scriptNode = document.createElement('script');
+	 * scriptNode.setAttribute('type', 'text/javascript');
+	 * DOMEval("console.log('Hello from a node!');", scriptNode);
+	 */
 	function DOMEval( code, node, doc ) {
 		doc = doc || document;
 
@@ -130,6 +154,37 @@ var document = window.document;
 	}
 
 
+/**
+ * Determines the type of a given object.
+ *
+ * This function checks if the provided object is null, an object, or a function,
+ * and returns a string representing its type. It also handles special cases for
+ * older Android versions.
+ *
+ * @param {*} obj - The object whose type is to be determined. Can be any value,
+ *                  including null.
+ * @returns {string} A string representing the type of the object. Possible return
+ *                  values include "object", "function", or the specific class name
+ *                  if the object is an instance of a specific class.
+ *
+ * @example
+ * // Returns "null"
+ * toType(null);
+ *
+ * // Returns "object"
+ * toType({});
+ *
+ * // Returns "function"
+ * toType(function() {});
+ *
+ * // Returns "string"
+ * toType("Hello");
+ *
+ * // Returns "number"
+ * toType(123);
+ *
+ * @throws {TypeError} Throws a TypeError if the argument is not a valid type.
+ */
 function toType( obj ) {
 	if ( obj == null ) {
 		return obj + "";
@@ -500,6 +555,25 @@ function( _i, name ) {
 	class2type[ "[object " + name + "]" ] = name.toLowerCase();
 } );
 
+/**
+ * Determines if the provided object is "array-like".
+ * An object is considered array-like if it has a length property
+ * that is a non-negative integer and is not a function or a window object.
+ *
+ * @param {any} obj - The object to be checked for array-like properties.
+ * @returns {boolean} Returns true if the object is array-like, otherwise false.
+ *
+ * @example
+ * isArrayLike([1, 2, 3]); // true
+ * isArrayLike({ length: 3 }); // true
+ * isArrayLike("string"); // true
+ * isArrayLike(function() {}); // false
+ * isArrayLike(window); // false
+ *
+ * @support
+ * This function has specific support considerations for real iOS 8.2
+ * and may not behave as expected in certain environments due to JIT errors.
+ */
 function isArrayLike( obj ) {
 
 	// Support: real iOS 8.2 only (not reproducible in simulator)
@@ -752,6 +826,28 @@ try {
 	};
 }
 
+/**
+ * A function to select elements from the DOM based on a given selector.
+ * It supports various types of selectors and contexts, optimizing for HTML documents.
+ *
+ * @param {string} selector - A string representing a selector to match elements against.
+ * @param {Element|Document} [context=document] - The context within which to search for the elements.
+ * @param {Array} [results=[]] - An array to store the results of the selection.
+ * @param {Array} [seed] - An optional array of elements to use as a seed for the selection.
+ *
+ * @returns {Array} The array of matched elements.
+ *
+ * @throws {TypeError} Throws an error if the selector is not a string or if the context is invalid.
+ *
+ * @example
+ * // Select all <div> elements in the document
+ * const divs = Sizzle('div');
+ *
+ * @example
+ * // Select elements with a specific class within a specific context
+ * const context = document.getElementById('myContainer');
+ * const items = Sizzle('.item', context);
+ */
 function Sizzle( selector, context, results, seed ) {
 	var m, i, elem, nid, match, groups, newSelector,
 		newContext = context && context.ownerDocument,
@@ -903,6 +999,30 @@ function Sizzle( selector, context, results, seed ) {
 function createCache() {
 	var keys = [];
 
+	/**
+	 * Caches a value associated with a specific key. This function ensures that
+	 * the cache does not exceed a predefined length by removing the oldest entries
+	 * when necessary.
+	 *
+	 * @param {string} key - The key under which the value is stored.
+	 *                       It is modified by appending a space to avoid
+	 *                       collisions with native prototype properties.
+	 * @param {*} value - The value to be cached. This can be of any type.
+	 * @returns {*} The cached value associated with the provided key.
+	 *
+	 * @throws {Error} Throws an error if the cache operation fails.
+	 *
+	 * @example
+	 * // Caching a value
+	 * const result = cache('myKey', { data: 'someData' });
+	 * console.log(result); // Outputs: { data: 'someData' }
+	 *
+	 * @example
+	 * // Caching a new value and exceeding cache length
+	 * cache('key1', 'value1');
+	 * cache('key2', 'value2');
+	 * // If cache length exceeds, the oldest entry will be removed.
+	 */
 	function cache( key, value ) {
 
 		// Use (key + " ") to avoid collision with native prototype properties (see Issue #157)
@@ -926,8 +1046,27 @@ function markFunction( fn ) {
 }
 
 /**
- * Support testing using an element
- * @param {Function} fn Passed the created element and returns a boolean result
+ * Tests a function by passing a newly created HTML element to it.
+ * The function should return a boolean result indicating the success of the test.
+ *
+ * @param {Function} fn - A callback function that receives the created element
+ *                        and is expected to return a boolean value.
+ *                        The function may throw an error, which will be caught
+ *                        and handled gracefully.
+ *
+ * @returns {boolean} - Returns true if the function executes successfully and
+ *                      returns a truthy value; otherwise, returns false.
+ *
+ * @throws {Error} - If the provided function throws an error during execution,
+ *                   it will be caught, and false will be returned.
+ *
+ * @example
+ * // Example usage of assert function
+ * const result = assert((el) => {
+ *   // Perform some operations on the element
+ *   return el instanceof HTMLFieldSetElement; // Should return true
+ * });
+ * console.log(result); // Outputs: true
  */
 function assert( fn ) {
 	var el = document.createElement( "fieldset" );
@@ -991,8 +1130,21 @@ function siblingCheck( a, b ) {
 }
 
 /**
- * Returns a function to use in pseudos for input types
- * @param {String} type
+ * Creates a pseudo function for input types.
+ *
+ * This function returns a new function that checks if a given element
+ * is an input element of a specified type. It can be used in various
+ * contexts where input type filtering is necessary.
+ *
+ * @param {String} type - The type of the input element to check for.
+ * @returns {Function} A function that takes an element and returns
+ *                    true if the element is an input of the specified type,
+ *                    otherwise false.
+ *
+ * @example
+ * const isCheckbox = createInputPseudo('checkbox');
+ * console.log(isCheckbox(document.createElement('input'))); // false
+ * console.log(isCheckbox(Object.assign(document.createElement('input'), { type: 'checkbox' }))); // true
  */
 function createInputPseudo( type ) {
 	return function( elem ) {
@@ -1002,8 +1154,22 @@ function createInputPseudo( type ) {
 }
 
 /**
- * Returns a function to use in pseudos for buttons
- * @param {String} type
+ * Creates a pseudo function for button elements based on the specified type.
+ *
+ * This function returns a new function that can be used to check if a given
+ * element is an input or button of the specified type. It is particularly useful
+ * for filtering elements in a selector context.
+ *
+ * @param {String} type - The type of button to match (e.g., "submit", "button").
+ * @returns {Function} A function that takes an element and returns a boolean
+ *                    indicating whether the element is a button of the specified type.
+ *
+ * @example
+ * const isSubmitButton = createButtonPseudo("submit");
+ * console.log(isSubmitButton(document.querySelector('input[type="submit"]'))); // true
+ * console.log(isSubmitButton(document.querySelector('button[type="button"]'))); // false
+ *
+ * @throws {TypeError} Throws an error if the provided type is not a string.
  */
 function createButtonPseudo( type ) {
 	return function( elem ) {
@@ -1013,8 +1179,26 @@ function createButtonPseudo( type ) {
 }
 
 /**
- * Returns a function to use in pseudos for :enabled/:disabled
- * @param {Boolean} disabled true for :disabled; false for :enabled
+ * Creates a pseudo-class function for determining if an element is :enabled or :disabled.
+ *
+ * This function returns another function that can be used to check the state of an element
+ * based on the provided boolean value. If `disabled` is true, the returned function will
+ * check for elements that are disabled; if false, it will check for enabled elements.
+ *
+ * @param {Boolean} disabled - A boolean indicating the desired state:
+ *                             true for :disabled; false for :enabled.
+ * @returns {Function} A function that takes an element and returns a boolean indicating
+ *                    whether the element matches the specified pseudo-class.
+ *
+ * @example
+ * const isDisabled = createDisabledPseudo(true);
+ * const isEnabled = createDisabledPseudo(false);
+ *
+ * const button = document.querySelector('button');
+ * console.log(isDisabled(button)); // true if the button is disabled
+ * console.log(isEnabled(button)); // true if the button is enabled
+ *
+ * @throws {TypeError} Throws an error if the provided argument is not a boolean.
  */
 function createDisabledPseudo( disabled ) {
 
@@ -1069,8 +1253,28 @@ function createDisabledPseudo( disabled ) {
 }
 
 /**
- * Returns a function to use in pseudos for positionals
- * @param {Function} fn
+ * Creates a positional pseudo function that can be used to filter elements based on their positions.
+ *
+ * This function takes a callback function as an argument and returns a new function that can be used
+ * to match elements at specific indexes. The returned function modifies the `seed` array based on
+ * the indexes provided by the callback function.
+ *
+ * @param {Function} fn - A function that returns an array of indexes based on the provided arguments.
+ *                        This function should accept three parameters: an array to fill, the length of
+ *                        the seed array, and the positional argument.
+ * @returns {Function} A function that accepts a `seed` array and a `matches` array, and modifies
+ *                    the `seed` array based on the matched indexes.
+ *
+ * @example
+ * const positionalMatcher = createPositionalPseudo((acc, length, argument) => {
+ *     // Logic to determine match indexes based on argument
+ * });
+ *
+ * const seed = [/* elements to match * /];
+ * const matches = [/* array to store match results * /];
+ * positionalMatcher(seed, matches);
+ *
+ * @throws {TypeError} Throws an error if the provided `fn` is not a function.
  */
 function createPositionalPseudo( fn ) {
 	return markFunction( function( argument ) {
@@ -2306,6 +2510,23 @@ for ( i in { submit: true, reset: true } ) {
 }
 
 // Easy API for creating new setFilters
+/**
+ * Sets the filters for the application.
+ *
+ * This function is responsible for applying the necessary filters
+ * to the data displayed in the application. It may involve
+ * updating the UI components or modifying the underlying data
+ * structure based on the selected filter criteria.
+ *
+ * @function setFilters
+ * @returns {void} This function does not return a value.
+ *
+ * @example
+ * // Example usage of setFilters
+ * setFilters();
+ *
+ * @throws {Error} Throws an error if the filter criteria are invalid.
+ */
 function setFilters() {}
 setFilters.prototype = Expr.filters = Expr.pseudos;
 Expr.setFilters = new setFilters();
@@ -2380,6 +2601,20 @@ tokenize = Sizzle.tokenize = function( selector, parseOnly ) {
 			tokenCache( selector, groups ).slice( 0 );
 };
 
+/**
+ * Converts an array of token objects into a single CSS selector string.
+ *
+ * This function iterates over the provided tokens and concatenates their
+ * `value` properties to form a complete selector.
+ *
+ * @param {Array<Object>} tokens - An array of token objects, each containing a `value` property.
+ * @returns {string} The concatenated selector string formed from the token values.
+ *
+ * @example
+ * const tokens = [{ value: 'div' }, { value: '.' }, { value: 'className' }];
+ * const selector = toSelector(tokens);
+ * console.log(selector); // Output: "div.className"
+ */
 function toSelector( tokens ) {
 	var i = 0,
 		len = tokens.length,
@@ -2390,6 +2625,26 @@ function toSelector( tokens ) {
 	return selector;
 }
 
+/**
+ * Creates a combinator function that checks elements against a matcher based on a specified combinator.
+ *
+ * This function can be used to traverse the DOM in a specific direction (e.g., parent, ancestor)
+ * and apply a matcher function to the elements encountered during the traversal.
+ *
+ * @param {Function} matcher - The matcher function to apply to each element found during traversal.
+ * @param {Object} combinator - An object that defines the direction and type of combinator.
+ * @param {boolean} base - A flag indicating whether to check non-element nodes.
+ * @returns {Function} A function that takes an element, context, and XML flag, and returns a boolean
+ *                    indicating whether the element matches the criteria defined by the matcher.
+ *
+ * @example
+ * const isDiv = (elem) => elem.nodeName.toLowerCase() === 'div';
+ * const combinator = { dir: 'parentNode', next: null, first: true };
+ * const checkDivParent = addCombinator(isDiv, combinator, false);
+ * console.log(checkDivParent(document.getElementById('myElement'), document)); // true or false
+ *
+ * @throws {TypeError} Throws an error if the matcher is not a function or if combinator is not an object.
+ */
 function addCombinator( matcher, combinator, base ) {
 	var dir = combinator.dir,
 		skip = combinator.next,
@@ -2457,6 +2712,29 @@ function addCombinator( matcher, combinator, base ) {
 		};
 }
 
+/**
+ * Creates a function that checks if an element matches all of the provided matchers.
+ *
+ * This function takes an array of matcher functions and returns a new function that
+ * applies each matcher to a given element. If all matchers return true for the element,
+ * the returned function will return true; otherwise, it will return false.
+ *
+ * @param {Array<Function>} matchers - An array of matcher functions to be applied to the element.
+ * Each matcher function should accept three parameters: the element, context, and XML.
+ *
+ * @returns {Function|boolean} A function that takes an element and returns true if it matches
+ * all provided matchers, or the first matcher if only one is provided.
+ *
+ * @example
+ * const isDiv = (elem) => elem.tagName === 'DIV';
+ * const isVisible = (elem) => elem.style.display !== 'none';
+ *
+ * const matcher = elementMatcher([isDiv, isVisible]);
+ * const result = matcher(document.getElementById('myElement'));
+ * console.log(result); // true if 'myElement' is a visible <div>
+ *
+ * @throws {TypeError} If matchers is not an array or contains non-function elements.
+ */
 function elementMatcher( matchers ) {
 	return matchers.length > 1 ?
 		function( elem, context, xml ) {
@@ -2471,6 +2749,24 @@ function elementMatcher( matchers ) {
 		matchers[ 0 ];
 }
 
+/**
+ * Executes a selector against multiple contexts and aggregates the results.
+ *
+ * This function iterates over an array of contexts, applying the provided selector to each context
+ * using the Sizzle engine, and collects the results into a single array.
+ *
+ * @param {string} selector - A string containing a selector expression to match elements against.
+ * @param {Array} contexts - An array of context elements in which to search for the selector.
+ * @param {Array} results - An array that will be populated with the results of the selector matches.
+ * @returns {Array} The aggregated results from all contexts.
+ *
+ * @example
+ * const contexts = [document, anotherElement];
+ * const results = [];
+ * const matchedElements = multipleContexts('.my-class', contexts, results);
+ *
+ * @throws {TypeError} Throws an error if contexts is not an array or if results is not an array.
+ */
 function multipleContexts( selector, contexts, results ) {
 	var i = 0,
 		len = contexts.length;
@@ -2480,6 +2776,27 @@ function multipleContexts( selector, contexts, results ) {
 	return results;
 }
 
+/**
+ * Filters and condenses an array of unmatched elements based on a provided filter function.
+ * Optionally maps the indices of the matched elements to a given array.
+ *
+ * @param {Array} unmatched - The array of elements to be filtered.
+ * @param {Array} [map] - An optional array to store the indices of the matched elements.
+ * @param {Function} [filter] - A function that determines whether an element should be included.
+ *                              It receives three arguments: the element, the context, and XML data.
+ * @param {Object} [context] - The context in which the filter function is executed.
+ * @param {Object} [xml] - Optional XML data that may be used by the filter function.
+ *
+ * @returns {Array} A new array containing only the elements that passed the filter function.
+ *
+ * @example
+ * const unmatched = [1, 2, 3, 4, 5];
+ * const filter = (elem) => elem > 2;
+ * const result = condense(unmatched, null, filter);
+ * console.log(result); // Output: [3, 4, 5]
+ *
+ * @throws {TypeError} If the first parameter is not an array.
+ */
 function condense( unmatched, map, filter, context, xml ) {
 	var elem,
 		newUnmatched = [],
@@ -2501,6 +2818,27 @@ function condense( unmatched, map, filter, context, xml ) {
 	return newUnmatched;
 }
 
+/**
+ * Creates a matcher function that can be used to filter elements based on the provided criteria.
+ * This function supports pre-filtering, post-filtering, and post-finding of elements.
+ *
+ * @param {Function} preFilter - A function to pre-filter elements before matching.
+ * @param {string} selector - A string representing the selector to match elements against.
+ * @param {Function} matcher - A function that performs the actual matching of elements.
+ * @param {Function} [postFilter] - An optional function to filter the matched elements after the initial matching.
+ * @param {Function} [postFinder] - An optional function to find additional elements based on the matched results.
+ * @param {string} [postSelector] - An optional selector string for the post-finder function.
+ *
+ * @returns {Function} A function that takes a seed array, results array, context, and XML flag,
+ *                     and performs the matching and filtering process.
+ *
+ * @throws {TypeError} Throws an error if any of the provided functions are not of the expected type.
+ *
+ * @example
+ * const matcher = setMatcher(preFilterFunc, '.class', matcherFunc, postFilterFunc, postFinderFunc, 'div');
+ * const results = [];
+ * matcher(seedArray, results, contextNode, false);
+ */
 function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postSelector ) {
 	if ( postFilter && !postFilter[ expando ] ) {
 		postFilter = setMatcher( postFilter );
@@ -2601,6 +2939,27 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 	} );
 }
 
+/**
+ * Creates a matcher function from a given array of tokens.
+ * This function processes the tokens to generate a matcher that can be used
+ * to filter elements based on the specified criteria.
+ *
+ * @param {Array} tokens - An array of token objects that define the matching criteria.
+ * Each token should have a `type` and `matches` properties, where `matches` is an array of values
+ * relevant to the token type.
+ *
+ * @returns {Function} A matcher function that can be used to test elements against the criteria defined by the tokens.
+ *
+ * @throws {Error} Throws an error if the tokens are malformed or if an unsupported token type is encountered.
+ *
+ * @example
+ * const tokens = [
+ *   { type: 'type1', matches: ['value1'] },
+ *   { type: 'type2', matches: ['value2'] }
+ * ];
+ * const matcher = matcherFromTokens(tokens);
+ * const result = matcher(element, context, xml);
+ */
 function matcherFromTokens( tokens ) {
 	var checkContext, matcher, j,
 		len = tokens.length,
@@ -2664,6 +3023,27 @@ function matcherFromTokens( tokens ) {
 	return elementMatcher( matchers );
 }
 
+/**
+ * Creates a matcher function from a set of element matchers and set matchers.
+ *
+ * This function combines element matchers and set matchers to create a
+ * super matcher that can filter elements based on the provided criteria.
+ *
+ * @param {Array<Function>} elementMatchers - An array of functions that match elements.
+ * @param {Array<Function>} setMatchers - An array of functions that match sets of elements.
+ * @returns {Function} A function that can be used to match elements based on the provided matchers.
+ *
+ * @example
+ * const elementMatch = (elem) => elem.tagName === 'DIV';
+ * const setMatch = (unmatched, results) => {
+ *   // Custom logic for set matching
+ * };
+ * const matcher = matcherFromGroupMatchers([elementMatch], [setMatch]);
+ *
+ * const matchedElements = matcher(seedElements, context, xml, results, outermost);
+ *
+ * @throws {Error} Throws an error if the context is invalid or if there are issues with the matchers.
+ */
 function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 	var bySet = setMatchers.length > 0,
 		byElement = elementMatchers.length > 0,
@@ -3022,6 +3402,21 @@ var rneedsContext = jQuery.expr.match.needsContext;
 
 
 
+/**
+ * Checks if the specified element's node name matches the given name,
+ * case-insensitively.
+ *
+ * @param {Element} elem - The DOM element whose node name is to be checked.
+ * @param {string} name - The name to compare against the element's node name.
+ * @returns {boolean} Returns true if the element's node name matches the
+ * specified name (case-insensitive), otherwise returns false.
+ *
+ * @example
+ * const div = document.createElement('div');
+ * console.log(nodeName(div, 'DIV')); // true
+ * console.log(nodeName(div, 'div')); // true
+ * console.log(nodeName(div, 'span')); // false
+ */
 function nodeName( elem, name ) {
 
   return elem.nodeName && elem.nodeName.toLowerCase() === name.toLowerCase();
@@ -3032,6 +3427,38 @@ var rsingleTag = ( /^<([a-z][^\/\0>:\x20\t\r\n\f]*)[\x20\t\r\n\f]*\/?>(?:<\/\1>|
 
 
 // Implement the identical functionality for filter and not
+/**
+ * Filters a set of elements based on a qualifier, which can be a function, a single element, an array-like object, or a selector string.
+ *
+ * @param {Array} elements - The array of elements to filter.
+ * @param {Function|Element|Array|string} qualifier - The criterion used to filter the elements. This can be:
+ *   - A function that is called for each element, returning true or false.
+ *   - A single DOM element to match against.
+ *   - An array-like object containing elements to match.
+ *   - A string representing a selector to filter elements.
+ * @param {boolean} not - A flag indicating whether to negate the filtering. If true, the elements that match the qualifier will be excluded.
+ * @returns {Array} The filtered array of elements that match the qualifier based on the specified conditions.
+ *
+ * @example
+ * // Example usage with a function as qualifier
+ * const filtered = winnow(elements, function(i, elem) {
+ *   return elem.classList.contains('active');
+ * }, false);
+ *
+ * @example
+ * // Example usage with a single element as qualifier
+ * const filtered = winnow(elements, document.getElementById('myElement'), false);
+ *
+ * @example
+ * // Example usage with an array-like object as qualifier
+ * const filtered = winnow(elements, [element1, element2], true);
+ *
+ * @example
+ * // Example usage with a selector string as qualifier
+ * const filtered = winnow(elements, '.active', false);
+ *
+ * @throws {TypeError} Throws an error if the elements parameter is not an array.
+ */
 function winnow( elements, qualifier, not ) {
 	if ( isFunction( qualifier ) ) {
 		return jQuery.grep( elements, function( elem, i ) {
@@ -3327,6 +3754,25 @@ jQuery.fn.extend( {
 	}
 } );
 
+/**
+ * Traverses the DOM tree to find the next sibling node in the specified direction.
+ * The function continues to traverse until it finds a node of type 1 (Element node).
+ *
+ * @param {Node} cur - The current node from which to start the traversal.
+ * @param {string} dir - The direction to traverse. This should be a string representing
+ *                       the property name of the sibling node (e.g., 'nextSibling' or 'previousSibling').
+ * @returns {Node|null} The next sibling node of type Element, or null if no such node exists.
+ *
+ * @example
+ * const nextElement = sibling(currentNode, 'nextSibling');
+ * if (nextElement) {
+ *   console.log('Found next element:', nextElement);
+ * } else {
+ *   console.log('No next element found.');
+ * }
+ *
+ * @throws {TypeError} Throws an error if the provided `cur` is not a valid Node.
+ */
 function sibling( cur, dir ) {
 	while ( ( cur = cur[ dir ] ) && cur.nodeType !== 1 ) {}
 	return cur;
@@ -3420,6 +3866,20 @@ var rnothtmlwhite = ( /[^\x20\t\r\n\f]+/g );
 
 
 // Convert String-formatted options into Object-formatted ones
+/**
+ * Creates an options object from a given string of options.
+ *
+ * This function takes a string of options, splits it into individual flags,
+ * and returns an object where each flag is a key with a value of `true`.
+ * This is useful for managing boolean flags in a more structured way.
+ *
+ * @param {string} options - A string containing space-separated option flags.
+ * @returns {Object} An object representing the options, where each flag is a key set to `true`.
+ *
+ * @example
+ * const options = createOptions("flag1 flag2 flag3");
+ * console.log(options); // { flag1: true, flag2: true, flag3: true }
+ */
 function createOptions( options ) {
 	var object = {};
 	jQuery.each( options.match( rnothtmlwhite ) || [], function( _, flag ) {
@@ -3645,13 +4105,65 @@ jQuery.Callbacks = function( options ) {
 };
 
 
+/**
+ * Returns the input value unchanged.
+ *
+ * This function is a simple identity function that takes a single argument
+ * and returns it. It can be useful in functional programming contexts where
+ * a function is required that does not alter its input.
+ *
+ * @param {*} v - The value to be returned.
+ * @returns {*} The same value that was passed as an argument.
+ *
+ * @example
+ * const result = Identity(5); // result will be 5
+ * const strResult = Identity("Hello"); // strResult will be "Hello"
+ */
 function Identity( v ) {
 	return v;
 }
+/**
+ * Throws the provided exception.
+ *
+ * This function is designed to throw any exception passed to it.
+ * It can be used for error handling or to propagate exceptions
+ * up the call stack.
+ *
+ * @param {Error} ex - The exception to be thrown. This should be an
+ *                     instance of the Error class or a subclass thereof.
+ * @throws {Error} Throws the provided exception.
+ *
+ * @example
+ * try {
+ *   Thrower(new Error('Something went wrong'));
+ * } catch (e) {
+ *   console.error(e.message); // Outputs: Something went wrong
+ * }
+ */
 function Thrower( ex ) {
 	throw ex;
 }
 
+/**
+ * Adopts a value, resolving or rejecting a promise based on the type of the value provided.
+ * This function checks if the value is a promise or a thenable and handles it accordingly.
+ * If the value is neither, it resolves with the provided value or rejects with an error if one occurs.
+ *
+ * @param {*} value - The value to adopt, which can be a promise, thenable, or any other type.
+ * @param {Function} resolve - The function to call when the value is successfully adopted.
+ * @param {Function} reject - The function to call when an error occurs while adopting the value.
+ * @param {boolean} noValue - A boolean indicating whether to resolve with the value or without it.
+ *                            If true, resolves with no arguments; if false, resolves with the value.
+ *
+ * @throws {Error} Throws an error if the adoption process fails, which will be caught and passed to reject.
+ *
+ * @example
+ * // Example usage of adoptValue
+ * adoptValue(somePromise,
+ *   (result) => { console.log('Resolved with:', result); },
+ *   (error) => { console.error('Rejected with:', error); },
+ *   false);
+ */
 function adoptValue( value, resolve, reject, noValue ) {
 	var method;
 
@@ -3745,6 +4257,23 @@ jQuery.extend( {
 				},
 				then: function( onFulfilled, onRejected, onProgress ) {
 					var maxDepth = 0;
+					/**
+					 * Creates a function that resolves a promise based on the provided parameters.
+					 * This function handles both normal and special processing of the promise resolution.
+					 *
+					 * @param {number} depth - The current depth of resolution, used to prevent double-resolution attempts.
+					 * @param {Object} deferred - The deferred object associated with the promise.
+					 * @param {Function} handler - The function to handle the resolution of the promise.
+					 * @param {boolean} special - A flag indicating whether special processing is required.
+					 * @returns {Function} A function that, when called, will attempt to resolve the promise.
+					 *
+					 * @throws {TypeError} Throws an error if there is an attempt to self-resolve a thenable.
+					 *
+					 * @example
+					 * const deferred = jQuery.Deferred();
+					 * const resolveFunction = resolve(0, deferred, handlerFunction, false);
+					 * resolveFunction();
+					 */
 					function resolve( depth, deferred, handler, special ) {
 						return function() {
 							var that = this,
@@ -4110,6 +4639,25 @@ jQuery.extend( {
 jQuery.ready.then = readyList.then;
 
 // The ready event handler and self cleanup method
+/**
+ * Handles the completion of the document loading process.
+ * This function is intended to be called when the DOM content
+ * and the window have fully loaded. It removes the event listeners
+ * for both the "DOMContentLoaded" and "load" events to prevent
+ * further calls to this function.
+ *
+ * After removing the event listeners, it triggers jQuery's
+ * ready method to ensure that any jQuery-dependent code can
+ * execute now that the document is fully loaded.
+ *
+ * @throws {Error} Throws an error if jQuery is not loaded or
+ *                 if there are issues with the ready method.
+ *
+ * @example
+ * // Attach the completed function to the DOMContentLoaded event
+ * document.addEventListener("DOMContentLoaded", completed);
+ * window.addEventListener("load", completed);
+ */
 function completed() {
 	document.removeEventListener( "DOMContentLoaded", completed );
 	window.removeEventListener( "load", completed );
@@ -4205,6 +4753,22 @@ var rmsPrefix = /^-ms-/,
 	rdashAlpha = /-([a-z])/g;
 
 // Used by camelCase as callback to replace()
+/**
+ * Converts the first letter of a given string to uppercase.
+ *
+ * This function is typically used in scenarios where a string needs to be transformed
+ * into camel case format, specifically for the first letter of a word.
+ *
+ * @param {string} _all - The entire matched string (not used in the function).
+ * @param {string} letter - The letter to be converted to uppercase.
+ * @returns {string} The uppercase version of the provided letter.
+ *
+ * @example
+ * // returns 'A'
+ * fcamelCase('', 'a');
+ *
+ * @throws {TypeError} If the provided letter is not a string.
+ */
 function fcamelCase( _all, letter ) {
 	return letter.toUpperCase();
 }
@@ -4212,6 +4776,25 @@ function fcamelCase( _all, letter ) {
 // Convert dashed to camelCase; used by the css and data modules
 // Support: IE <=9 - 11, Edge 12 - 15
 // Microsoft forgot to hump their vendor prefix (#9572)
+/**
+ * Converts a given string to camel case format.
+ *
+ * This function replaces any prefix "ms-" in the string and transforms
+ * the string into camel case by applying specific regular expressions.
+ *
+ * @param {string} string - The input string to be converted to camel case.
+ * @returns {string} The camel case formatted string.
+ *
+ * @example
+ * // returns "ms-exampleString"
+ * camelCase("ms-example_string");
+ *
+ * @example
+ * // returns "exampleString"
+ * camelCase("example_string");
+ *
+ * @throws {TypeError} If the input is not a string.
+ */
 function camelCase( string ) {
 	return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
 }
@@ -4229,6 +4812,18 @@ var acceptData = function( owner ) {
 
 
 
+/**
+ * Represents a Data object that is associated with jQuery's expando property.
+ * Each instance of Data will have a unique expando identifier.
+ *
+ * @class
+ * @constructor
+ * @throws {Error} Throws an error if jQuery is not defined.
+ *
+ * @example
+ * const dataInstance = new Data();
+ * console.log(dataInstance.expando); // Outputs the unique expando identifier
+ */
 function Data() {
 	this.expando = jQuery.expando + Data.uid++;
 }
@@ -4398,6 +4993,24 @@ var dataUser = new Data();
 var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
 	rmultiDash = /[A-Z]/g;
 
+/**
+ * Converts a string representation of a value into its corresponding JavaScript type.
+ * The function can handle boolean strings, null, numbers, JSON strings, and plain strings.
+ *
+ * @param {string} data - The string representation of the value to be converted.
+ * @returns {boolean|null|number|Object|string} - The converted value, which can be a boolean,
+ * null, number, parsed JSON object, or the original string if no conversion is applicable.
+ *
+ * @example
+ * getData("true"); // returns true
+ * getData("false"); // returns false
+ * getData("null"); // returns null
+ * getData("42"); // returns 42
+ * getData("{\"key\":\"value\"}"); // returns { key: "value" }
+ * getData("some string"); // returns "some string"
+ *
+ * @throws {SyntaxError} - Throws an error if the input string is not valid JSON when attempting to parse.
+ */
 function getData( data ) {
 	if ( data === "true" ) {
 		return true;
@@ -4423,6 +5036,29 @@ function getData( data ) {
 	return data;
 }
 
+/**
+ * Retrieves or sets data attributes on a specified HTML element.
+ * If the data is not provided, it attempts to fetch the value from the
+ * HTML5 data-* attribute of the element.
+ *
+ * @param {Element} elem - The HTML element from which to retrieve or set the data.
+ * @param {string} key - The key of the data attribute to retrieve or set.
+ * @param {*} [data] - The value to set for the data attribute. If not provided,
+ *                     the function will attempt to retrieve the value from the
+ *                     element's data-* attribute.
+ * @returns {*} The value of the data attribute, or undefined if not found or
+ *              if an error occurs during retrieval.
+ *
+ * @throws {Error} Throws an error if there is an issue parsing the data
+ *                 retrieved from the HTML5 data-* attribute.
+ *
+ * @example
+ * // Setting a data attribute
+ * dataAttr(element, 'userId', 123);
+ *
+ * // Retrieving a data attribute
+ * const userId = dataAttr(element, 'userId');
+ */
 function dataAttr( elem, key, data ) {
 	var name;
 
@@ -4735,6 +5371,27 @@ var isHiddenWithinTree = function( elem, el ) {
 
 
 
+/**
+ * Adjusts the CSS property of a given element based on the provided value parts and tween.
+ * This function computes the appropriate value for the CSS property, taking into account
+ * potential unit mismatches and applying any relative offsets if specified.
+ *
+ * @param {HTMLElement} elem - The DOM element whose CSS property is to be adjusted.
+ * @param {string} prop - The name of the CSS property to adjust.
+ * @param {Array} valueParts - An array containing parts of the value to be adjusted,
+ *                             where the second element is a relative offset and the third
+ *                             element is the absolute value.
+ * @param {Object} [tween] - An optional tween object that holds the current animation state.
+ *                            If provided, it will be updated with the start and end values.
+ * @returns {number} The adjusted value of the CSS property after computation.
+ *
+ * @throws {Error} Throws an error if the element is not a valid DOM element.
+ *
+ * @example
+ * const elem = document.getElementById('myElement');
+ * const adjustedValue = adjustCSS(elem, 'width', ['+=', '10', 'px'], tween);
+ * console.log(adjustedValue); // Outputs the new width value after adjustment.
+ */
 function adjustCSS( elem, prop, valueParts, tween ) {
 	var adjusted, scale,
 		maxIterations = 20,
@@ -4803,6 +5460,24 @@ function adjustCSS( elem, prop, valueParts, tween ) {
 
 var defaultDisplayMap = {};
 
+/**
+ * Retrieves the default display property for a given HTML element.
+ *
+ * This function checks if the display property for the specified element's node name
+ * is already cached in the `defaultDisplayMap`. If not, it creates a temporary element
+ * of the same node name, appends it to the document body, and retrieves its computed
+ * display value using jQuery. The temporary element is then removed from the DOM.
+ * If the computed display value is "none", it defaults to "block".
+ *
+ * @param {HTMLElement} elem - The HTML element for which to retrieve the default display.
+ * @returns {string} The default display value for the specified element.
+ *
+ * @throws {TypeError} If the provided argument is not an instance of HTMLElement.
+ *
+ * @example
+ * const divDisplay = getDefaultDisplay(document.createElement('div'));
+ * console.log(divDisplay); // Outputs: "block" (or other default display value)
+ */
 function getDefaultDisplay( elem ) {
 	var temp,
 		doc = elem.ownerDocument,
@@ -4826,6 +5501,27 @@ function getDefaultDisplay( elem ) {
 	return display;
 }
 
+/**
+ * Toggles the visibility of a set of HTML elements based on the specified show parameter.
+ * This function modifies the display style of each element in the provided array, either showing
+ * or hiding them while preserving their original display values.
+ *
+ * @param {HTMLElement[]} elements - An array of HTML elements to show or hide.
+ * @param {boolean} show - A boolean indicating whether to show (true) or hide (false) the elements.
+ *
+ * @returns {HTMLElement[]} The array of elements with their display styles updated.
+ *
+ * @throws {TypeError} Throws an error if the provided elements are not an array or if any element
+ *                     does not have a style property.
+ *
+ * @example
+ * // To show a list of elements
+ * const elements = document.querySelectorAll('.my-elements');
+ * showHide(elements, true);
+ *
+ * // To hide a list of elements
+ * showHide(elements, false);
+ */
 function showHide( elements, show ) {
 	var display, elem,
 		values = [],
@@ -4958,6 +5654,32 @@ if ( !support.option ) {
 }
 
 
+/**
+ * Retrieves all elements from the specified context that match the given tag name.
+ * If no tag is specified, all elements are returned.
+ *
+ * This function provides compatibility for different browsers, specifically handling
+ * cases where certain methods may not be available (e.g., older versions of Internet Explorer).
+ *
+ * @param {Element} context - The context within which to search for elements.
+ *                            This should be a valid DOM element.
+ * @param {string} [tag] - The tag name to filter the elements by. If not provided,
+ *                         all elements will be returned.
+ * @returns {Array<Element>} An array of elements that match the specified tag name
+ *                           within the given context. If no elements are found,
+ *                           an empty array is returned.
+ *
+ * @example
+ * // Get all <div> elements within a specific container
+ * const container = document.getElementById('myContainer');
+ * const divs = getAll(container, 'div');
+ *
+ * @example
+ * // Get all elements within a specific container
+ * const allElements = getAll(container);
+ *
+ * @throws {TypeError} Throws a TypeError if the context is not a valid DOM element.
+ */
 function getAll( context, tag ) {
 
 	// Support: IE <=9 - 11 only
@@ -4983,6 +5705,25 @@ function getAll( context, tag ) {
 
 
 // Mark scripts as having already been evaluated
+/**
+ * Sets the global evaluation state for a collection of elements.
+ *
+ * This function iterates over the provided elements and assigns a global evaluation
+ * flag based on the reference elements. If no reference elements are provided,
+ * the global evaluation state will be set to false for all elements.
+ *
+ * @param {Array} elems - An array of elements for which to set the global evaluation state.
+ * @param {Array} [refElements] - An optional array of reference elements to determine the global evaluation state.
+ *                                 If provided, the global evaluation state will be derived from these elements.
+ *
+ * @throws {TypeError} Throws an error if `elems` is not an array.
+ *
+ * @example
+ * // Example usage:
+ * const elements = [element1, element2, element3];
+ * const referenceElements = [refElement1, refElement2, refElement3];
+ * setGlobalEval(elements, referenceElements);
+ */
 function setGlobalEval( elems, refElements ) {
 	var i = 0,
 		l = elems.length;
@@ -4999,6 +5740,29 @@ function setGlobalEval( elems, refElements ) {
 
 var rhtml = /<|&#?\w+;/;
 
+/**
+ * Constructs a DocumentFragment from a collection of elements.
+ * This function processes various types of input, including HTML strings,
+ * text nodes, and DOM elements, and appends them to a DocumentFragment.
+ *
+ * @param {Array} elems - An array of elements to be processed. This can include
+ *                        DOM elements, HTML strings, or text values.
+ * @param {Document} context - The document context in which to create the fragment.
+ * @param {Array} [scripts] - An optional array that will be populated with script
+ *                            elements found in the input.
+ * @param {Array} [selection] - An optional array of elements to be excluded from
+ *                              the fragment if they are already present in the selection.
+ * @param {Array} [ignored] - An optional array that will be populated with elements
+ *                            that were ignored during processing.
+ *
+ * @returns {DocumentFragment} The constructed DocumentFragment containing the processed nodes.
+ *
+ * @throws {TypeError} Throws an error if the provided context is not a valid Document.
+ *
+ * @example
+ * const fragment = buildFragment(['<div>Hello</div>', 'World'], document);
+ * console.log(fragment); // Outputs a DocumentFragment containing the nodes.
+ */
 function buildFragment( elems, context, scripts, selection, ignored ) {
 	var elem, tmp, tag, wrap, attached, j,
 		fragment = context.createDocumentFragment(),
@@ -5094,10 +5858,36 @@ var
 	rmouseEvent = /^(?:mouse|pointer|contextmenu|drag|drop)|click/,
 	rtypenamespace = /^([^.]*)(?:\.(.+)|)/;
 
+/**
+ * Returns a boolean value of true.
+ *
+ * This function does not take any parameters and is used to provide a consistent
+ * return value of true, which can be useful in various logical operations or
+ * as a placeholder in testing scenarios.
+ *
+ * @returns {boolean} Always returns true.
+ *
+ * @example
+ * const result = returnTrue();
+ * console.log(result); // Output: true
+ */
 function returnTrue() {
 	return true;
 }
 
+/**
+ * Returns a boolean value of false.
+ *
+ * This function does not take any parameters and is useful in scenarios
+ * where a false value is required, such as in conditional statements or
+ * as a default return value for certain operations.
+ *
+ * @returns {boolean} Always returns false.
+ *
+ * @example
+ * const result = returnFalse();
+ * console.log(result); // Output: false
+ */
 function returnFalse() {
 	return false;
 }
@@ -5108,6 +5898,19 @@ function returnFalse() {
 // and blur to be synchronous when the element is not already active.
 // (focus and blur are always synchronous in other supported browsers,
 // this just defines when we can count on it).
+/**
+ * Checks if the specified element is the currently focused element based on the provided type.
+ *
+ * @param {Element} elem - The DOM element to check against the active element.
+ * @param {string} type - The type of focus to check for. Should be "focus" or any other string.
+ * @returns {boolean} Returns true if the specified element is the active element and the type is "focus",
+ *                   or if the specified element is not the active element and the type is not "focus".
+ *
+ * @example
+ * const inputElement = document.getElementById('myInput');
+ * const isFocused = expectSync(inputElement, 'focus');
+ * console.log(isFocused); // true if inputElement is focused, false otherwise.
+ */
 function expectSync( elem, type ) {
 	return ( elem === safeActiveElement() ) === ( type === "focus" );
 }
@@ -5115,12 +5918,61 @@ function expectSync( elem, type ) {
 // Support: IE <=9 only
 // Accessing document.activeElement can throw unexpectedly
 // https://bugs.jquery.com/ticket/13393
+/**
+ * Retrieves the currently active element in the document.
+ *
+ * This function attempts to return the element that is currently focused
+ * in the DOM. If an error occurs during the retrieval process, it will
+ * catch the error and return `undefined`.
+ *
+ * @returns {Element|undefined} The currently active element, or `undefined`
+ * if an error occurs.
+ *
+ * @example
+ * const activeElement = safeActiveElement();
+ * console.log(activeElement); // Logs the active element or undefined
+ */
 function safeActiveElement() {
 	try {
 		return document.activeElement;
 	} catch ( err ) { }
 }
 
+/**
+ * Attaches event handlers to the specified elements for the given event types.
+ * This function can handle multiple event types and can also accept a selector
+ * for delegated events.
+ *
+ * @param {HTMLElement|jQuery} elem - The element or jQuery object to which the event handlers will be attached.
+ * @param {string|Object} types - A string of space-separated event types or an object mapping event types to handlers.
+ * @param {string} [selector] - A selector string to filter the descendants of the selected elements that trigger the event.
+ * @param {*} [data] - Additional data to be passed to the event handler.
+ * @param {Function} [fn] - The function to execute when the event is triggered.
+ * @param {boolean} [one] - If true, the handler will be executed at most once per element per event type.
+ *
+ * @returns {HTMLElement|jQuery} The original element or jQuery object for chaining.
+ *
+ * @throws {TypeError} Throws an error if the provided element is not a valid HTML element or jQuery object.
+ *
+ * @example
+ * // Attach a click event handler to a button
+ * on(document.getElementById('myButton'), 'click', function() {
+ *   alert('Button clicked!');
+ * });
+ *
+ * @example
+ * // Attach multiple event handlers
+ * on(document.getElementById('myDiv'), {
+ *   click: function() { console.log('Div clicked!'); },
+ *   mouseover: function() { console.log('Mouse over div!'); }
+ * });
+ *
+ * @example
+ * // Using a selector for delegated events
+ * on(document.getElementById('parentDiv'), 'click', '.child', function() {
+ *   alert('Child clicked!');
+ * });
+ */
 function on( elem, types, selector, data, fn, one ) {
 	var origFn, type;
 
@@ -5609,6 +6461,32 @@ jQuery.event = {
 // synthetic events by interrupting progress until reinvoked in response to
 // *native* events that it fires directly, ensuring that state changes have
 // already occurred before other listeners are invoked.
+/**
+ * Leverages native event handling by setting up a special handler for a given event type on a specified element.
+ * This function manages the interaction between synthetic and native events, ensuring proper event propagation
+ * and handling based on whether the event is triggered synchronously or asynchronously.
+ *
+ * @param {HTMLElement} el - The DOM element to which the event handler is attached.
+ * @param {string} type - The type of event to listen for (e.g., 'click', 'focus').
+ * @param {function} [expectSync] - An optional function that determines if the event should be handled synchronously.
+ *                                   If not provided, the function will assume a trigger call, forcing setup through jQuery.event.add.
+ *
+ * @returns {void}
+ *
+ * @throws {Error} Throws an error if the provided element is not a valid DOM element.
+ *
+ * @example
+ * // Example usage of leverageNative
+ * leverageNative(document.getElementById('myElement'), 'click', function(el, type) {
+ *   // Custom logic to determine if the event should be synchronous
+ *   return true; // or false based on your logic
+ * });
+ *
+ * @description
+ * The function first checks if the `expectSync` parameter is provided. If not, it sets up a basic event handler
+ * using jQuery's event system. If `expectSync` is provided, it registers a more complex handler that manages
+ * the state of the event and ensures that synthetic events do not interfere with native events.
+ */
 function leverageNative( el, type, expectSync ) {
 
 	// Missing expectSync indicates a trigger call, which must force setup through jQuery.event.add
@@ -5973,6 +6851,22 @@ var
 	rcleanScript = /^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g;
 
 // Prefer a tbody over its parent table for containing new rows
+/**
+ * Determines the appropriate target element for manipulation based on the provided element and content.
+ *
+ * This function checks if the given element is a table and if the content is a valid table row.
+ * If both conditions are met, it returns the first tbody child of the table or the table itself if no tbody exists.
+ * Otherwise, it returns the original element.
+ *
+ * @param {Element} elem - The element to be manipulated, typically a table element.
+ * @param {Node} content - The content to be checked against the element, which may include a row or other nodes.
+ * @returns {Element} The target element for manipulation, either the tbody of the table or the original element.
+ *
+ * @example
+ * const target = manipulationTarget(document.getElementById('myTable'), newRow);
+ *
+ * @throws {TypeError} Throws an error if the provided elem is not a valid DOM element.
+ */
 function manipulationTarget( elem, content ) {
 	if ( nodeName( elem, "table" ) &&
 		nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
@@ -5984,10 +6878,41 @@ function manipulationTarget( elem, content ) {
 }
 
 // Replace/restore the type attribute of script elements for safe DOM manipulation
+/**
+ * Disables a script element by modifying its type attribute.
+ *
+ * This function changes the type of the provided script element to indicate that it is disabled.
+ * The new type is set to a string that combines a boolean value indicating whether the original type
+ * attribute was present and the original type of the script element.
+ *
+ * @param {HTMLElement} elem - The script element to be disabled.
+ * @returns {HTMLElement} The modified script element.
+ *
+ * @example
+ * const scriptElement = document.createElement('script');
+ * scriptElement.type = 'text/javascript';
+ * disableScript(scriptElement);
+ * console.log(scriptElement.type); // Outputs: "true/text/javascript"
+ */
 function disableScript( elem ) {
 	elem.type = ( elem.getAttribute( "type" ) !== null ) + "/" + elem.type;
 	return elem;
 }
+/**
+ * Restores the script element by adjusting its type attribute.
+ * If the type starts with "true/", it removes that prefix; otherwise, it removes the type attribute entirely.
+ *
+ * @param {HTMLElement} elem - The script element to be restored.
+ * @returns {HTMLElement} The modified script element.
+ *
+ * @example
+ * const scriptElement = document.createElement('script');
+ * scriptElement.type = 'true/application/javascript';
+ * const restoredElement = restoreScript(scriptElement);
+ * console.log(restoredElement.type); // Output: 'application/javascript'
+ *
+ * @throws {TypeError} Throws an error if the provided element is not an HTMLElement.
+ */
 function restoreScript( elem ) {
 	if ( ( elem.type || "" ).slice( 0, 5 ) === "true/" ) {
 		elem.type = elem.type.slice( 5 );
@@ -5998,6 +6923,26 @@ function restoreScript( elem ) {
 	return elem;
 }
 
+/**
+ * Clones event handlers and user data from one DOM element to another.
+ *
+ * This function copies all event handlers associated with the source element
+ * and attaches them to the destination element. It also copies any user data
+ * associated with the source element to the destination element.
+ *
+ * @param {HTMLElement} src - The source DOM element from which to copy events and data.
+ * @param {HTMLElement} dest - The destination DOM element to which events and data will be copied.
+ * @throws {TypeError} Throws an error if the destination is not a valid DOM element.
+ *
+ * @example
+ * const sourceElement = document.getElementById('source');
+ * const destinationElement = document.getElementById('destination');
+ * cloneCopyEvent(sourceElement, destinationElement);
+ *
+ * @example
+ * // This will not copy anything as the destination is not a valid element
+ * cloneCopyEvent(sourceElement, null); // No operation performed
+ */
 function cloneCopyEvent( src, dest ) {
 	var i, l, type, pdataOld, udataOld, udataCur, events;
 
@@ -6031,6 +6976,29 @@ function cloneCopyEvent( src, dest ) {
 }
 
 // Fix IE bugs, see support tests
+/**
+ * Clones the checked state of checkboxes or radio buttons and the default value of input fields and textareas from a source element to a destination element.
+ *
+ * This function ensures that when elements are cloned, their relevant states are preserved. Specifically, it handles:
+ * - The checked state for checkable input types (checkboxes and radio buttons).
+ * - The default value for input elements and textareas.
+ *
+ * @param {HTMLElement} src - The source element from which to clone the state.
+ * @param {HTMLElement} dest - The destination element to which the state will be applied.
+ *
+ * @throws {TypeError} Throws an error if either `src` or `dest` is not an instance of HTMLElement.
+ *
+ * @example
+ * const sourceCheckbox = document.createElement('input');
+ * sourceCheckbox.type = 'checkbox';
+ * sourceCheckbox.checked = true;
+ *
+ * const clonedCheckbox = document.createElement('input');
+ * clonedCheckbox.type = 'checkbox';
+ *
+ * fixInput(sourceCheckbox, clonedCheckbox);
+ * console.log(clonedCheckbox.checked); // true
+ */
 function fixInput( src, dest ) {
 	var nodeName = dest.nodeName.toLowerCase();
 
@@ -6044,6 +7012,31 @@ function fixInput( src, dest ) {
 	}
 }
 
+/**
+ * Manipulates the DOM by inserting or replacing elements in the specified collection.
+ * This function can handle various types of arguments and callbacks to customize the manipulation.
+ *
+ * @param {jQuery} collection - A jQuery collection of elements to manipulate.
+ * @param {Array} args - An array of arguments specifying the content to insert or replace.
+ * @param {Function} callback - A function to execute for each element in the collection after manipulation.
+ * @param {boolean} [ignored] - A flag indicating whether to include ignored elements in the manipulation.
+ *
+ * @returns {jQuery} The original collection for chaining.
+ *
+ * @throws {TypeError} Throws an error if the provided collection is not a jQuery object.
+ *
+ * @example
+ * // Example usage of domManip
+ * domManip($('#myDiv'), ['<p>New content</p>'], function(node) {
+ *   $(this).append(node);
+ * });
+ *
+ * @example
+ * // Example with a callback function that modifies the content based on index
+ * domManip($('.item'), ['<span>Item</span>'], function(node, index) {
+ *   $(this).prepend(node);
+ * });
+ */
 function domManip( collection, args, callback, ignored ) {
 
 	// Flatten any nested arrays
@@ -6136,6 +7129,32 @@ function domManip( collection, args, callback, ignored ) {
 	return collection;
 }
 
+/**
+ * Removes specified elements from the DOM.
+ *
+ * This function takes an element or a selector and removes the matching elements from the DOM.
+ * If `keepData` is false, it also cleans up any associated data for the removed elements.
+ *
+ * @param {Element|Array<Element>} elem - The element or elements to be removed.
+ * @param {string} [selector] - A selector string to filter the elements to be removed. If not provided, all elements will be removed.
+ * @param {boolean} [keepData=false] - A flag indicating whether to keep data associated with the elements being removed.
+ * @returns {Element|Array<Element>} The original element or elements that were passed in.
+ *
+ * @throws {TypeError} Throws an error if `elem` is not a valid DOM element or an array of DOM elements.
+ *
+ * @example
+ * // Remove a single element by reference
+ * const element = document.getElementById('myElement');
+ * remove(element);
+ *
+ * @example
+ * // Remove multiple elements using a selector
+ * remove(document.body, '.remove-me');
+ *
+ * @example
+ * // Remove elements but keep their associated data
+ * remove(document.body, '.remove-me', true);
+ */
 function remove( elem, selector, keepData ) {
 	var node,
 		nodes = selector ? jQuery.filter( selector, elem ) : elem,
@@ -6450,6 +7469,27 @@ var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
 
 	// Executing both pixelPosition & boxSizingReliable tests require only one layout
 	// so they're executed at the same time to save the second computation.
+	/**
+	 * Performs a series of style tests to determine the reliability of various CSS properties
+	 * across different browsers and environments. This function is designed to be executed only once
+	 * as it modifies the DOM and checks computed styles.
+	 *
+	 * The tests include:
+	 * - Checking pixel positioning accuracy.
+	 * - Verifying margin calculations.
+	 * - Assessing box-sizing behavior.
+	 * - Evaluating scrollbox dimensions.
+	 *
+	 * This function relies on a singleton pattern, ensuring that it does not execute multiple times
+	 * unnecessarily. It appends a temporary container and div to the document to perform the tests,
+	 * and then removes them after the checks are complete.
+	 *
+	 * @throws {Error} Throws an error if the required DOM elements are not available for testing.
+	 *
+	 * @example
+	 * // Call the function to perform style tests
+	 * computeStyleTests();
+	 */
 	function computeStyleTests() {
 
 		// This is a singleton, we need to execute it only once
@@ -6494,6 +7534,29 @@ var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
 		div = null;
 	}
 
+	/**
+	 * Rounds a given pixel measure to the nearest integer.
+	 *
+	 * This function takes a string or number representing a pixel measure,
+	 * converts it to a floating-point number, and then rounds it to the nearest
+	 * whole number. This is useful for ensuring that pixel values are integers,
+	 * which is often required in graphical applications.
+	 *
+	 * @param {string|number} measure - The pixel measure to be rounded.
+	 *                                   It can be a string representation of a number
+	 *                                   or a number itself.
+	 * @returns {number} The rounded pixel measure as an integer.
+	 *
+	 * @throws {TypeError} If the provided measure cannot be parsed as a number.
+	 *
+	 * @example
+	 * // Returns 5
+	 * roundPixelMeasures('4.7');
+	 *
+	 * @example
+	 * // Returns 10
+	 * roundPixelMeasures(10.3);
+	 */
 	function roundPixelMeasures( measure ) {
 		return Math.round( parseFloat( measure ) );
 	}
@@ -6568,6 +7631,27 @@ var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
 } )();
 
 
+/**
+ * Retrieves the computed CSS property value for a specified element.
+ *
+ * This function accounts for various browser quirks and ensures that the correct value is returned,
+ * even for detached elements. It handles special cases for certain CSS properties and provides
+ * compatibility with older versions of Internet Explorer.
+ *
+ * @param {Element} elem - The DOM element for which to retrieve the CSS property value.
+ * @param {string} name - The name of the CSS property to retrieve (e.g., 'width', 'height').
+ * @param {CSSStyleDeclaration} [computed] - An optional computed style object. If not provided,
+ *        it will be retrieved using the `getStyles` function.
+ * @returns {string|undefined} The computed value of the specified CSS property, or undefined if
+ *          the value cannot be determined.
+ *
+ * @example
+ * const element = document.getElementById('myElement');
+ * const width = curCSS(element, 'width');
+ * console.log(width); // Outputs the computed width of the element.
+ *
+ * @throws {TypeError} Throws an error if the provided element is not a valid DOM element.
+ */
 function curCSS( elem, name, computed ) {
 	var width, minWidth, maxWidth, ret,
 
@@ -6621,6 +7705,17 @@ function curCSS( elem, name, computed ) {
 }
 
 
+/**
+ * Creates a getter hook that conditionally executes a provided hook function based on a condition.
+ * The hook will only be executed if the specified condition function returns false.
+ * If the condition function returns true, the hook is removed and no further executions occur.
+ *
+ * @param {Function} conditionFn - A function that returns a boolean indicating whether the hook is needed.
+ * @param {Function} hookFn - The function to be executed if the hook is needed.
+ * @returns {Object} An object containing a getter that can be used to access the hook function.
+ *
+ * @example
+ * const condition = () => /* some condition logic */
 function addGetHookIf( conditionFn, hookFn ) {
 
 	// Define the hook, we'll check on the first run if it's really needed.
@@ -6646,6 +7741,25 @@ var cssPrefixes = [ "Webkit", "Moz", "ms" ],
 	vendorProps = {};
 
 // Return a vendor-prefixed property or undefined
+/**
+ * Retrieves the vendor-prefixed version of a CSS property name.
+ *
+ * This function checks if a given CSS property name exists with vendor prefixes
+ * (such as '-webkit-', '-moz-', etc.) by capitalizing the first letter of the
+ * property name and appending each prefix from a predefined list. If a valid
+ * vendor-prefixed property is found, it returns that name; otherwise, it returns
+ * undefined.
+ *
+ * @param {string} name - The unprefixed CSS property name to check for vendor prefixes.
+ * @returns {string|undefined} The vendor-prefixed CSS property name if found, otherwise undefined.
+ *
+ * @example
+ * // Assuming 'transform' is a valid CSS property
+ * const prefixedName = vendorPropName('transform');
+ * console.log(prefixedName); // Outputs: '-webkit-transform' or similar, depending on the browser support.
+ *
+ * @throws {TypeError} Throws an error if the provided name is not a string.
+ */
 function vendorPropName( name ) {
 
 	// Check for vendor prefixed names
@@ -6661,6 +7775,26 @@ function vendorPropName( name ) {
 }
 
 // Return a potentially-mapped jQuery.cssProps or vendor prefixed property
+/**
+ * Retrieves the final property name for a given CSS property.
+ *
+ * This function checks if the provided property name has a corresponding
+ * final name in the jQuery CSS properties or vendor properties. If not,
+ * it attempts to generate the vendor-specific property name. If the
+ * property name is found in an empty style object, it returns the original
+ * name.
+ *
+ * @param {string} name - The CSS property name to be resolved.
+ * @returns {string} The final resolved property name, which may be a
+ *         vendor-prefixed version or the original name.
+ *
+ * @example
+ * // Example usage:
+ * const propName = finalPropName('transform');
+ * console.log(propName); // Outputs the final property name for 'transform'.
+ *
+ * @throws {TypeError} Throws an error if the provided name is not a string.
+ */
 function finalPropName( name ) {
 	var final = jQuery.cssProps[ name ] || vendorProps[ name ];
 
@@ -6687,6 +7821,23 @@ var
 		fontWeight: "400"
 	};
 
+/**
+ * Sets a positive number based on the provided value and an optional subtraction.
+ * This function normalizes the input value and ensures that the result is non-negative.
+ *
+ * @param {HTMLElement} _elem - The HTML element to which the value is related. This parameter is not used in the calculation but may be relevant for context.
+ * @param {string|number} value - The value to be processed. It can be a string containing a CSS value (e.g., "10px") or a number.
+ * @param {number} [subtract=0] - An optional value to subtract from the processed number. Defaults to 0 if not provided.
+ * @returns {string|number} - Returns a string with the unit (e.g., "px") if applicable, or the processed number.
+ *                            If the input value is invalid, it returns the original value.
+ *
+ * @example
+ * // Example usage:
+ * const result = setPositiveNumber(element, "20px", 5);
+ * console.log(result); // Outputs: "15px"
+ *
+ * @throws {TypeError} Throws an error if the input value cannot be parsed as a number.
+ */
 function setPositiveNumber( _elem, value, subtract ) {
 
 	// Any relative (+/-) values have already been
@@ -6699,6 +7850,28 @@ function setPositiveNumber( _elem, value, subtract ) {
 		value;
 }
 
+/**
+ * Adjusts the box model for a given element based on the specified parameters.
+ *
+ * This function calculates the adjustment needed for the box model of an element
+ * depending on whether it is using a border-box or content-box model. It takes into
+ * account various CSS properties such as padding, border, and margin.
+ *
+ * @param {HTMLElement} elem - The DOM element to adjust.
+ * @param {string} dimension - The dimension to adjust, either "width" or "height".
+ * @param {string} box - The box model to use, can be "content", "padding", "border", or "margin".
+ * @param {boolean} isBorderBox - Indicates if the box model is a border-box.
+ * @param {Object} styles - An object containing the computed styles of the element.
+ * @param {number} computedVal - The computed value to adjust against.
+ * @returns {number} The calculated adjustment value for the specified box model.
+ *
+ * @throws {Error} Throws an error if the provided element is not valid or if the dimension
+ *                 is not recognized.
+ *
+ * @example
+ * const adjustment = boxModelAdjustment(element, 'width', 'padding', false, computedStyles, 100);
+ * console.log(adjustment); // Outputs the adjustment value for the width padding.
+ */
 function boxModelAdjustment( elem, dimension, box, isBorderBox, styles, computedVal ) {
 	var i = dimension === "width" ? 1 : 0,
 		extra = 0,
@@ -6767,6 +7940,27 @@ function boxModelAdjustment( elem, dimension, box, isBorderBox, styles, computed
 	return delta;
 }
 
+/**
+ * Retrieves the computed width or height of a specified element, taking into account
+ * the box model and any additional adjustments required.
+ *
+ * @param {Element} elem - The DOM element for which the width or height is to be calculated.
+ * @param {string} dimension - The dimension to retrieve, either "width" or "height".
+ * @param {boolean} [extra] - A flag indicating whether to include additional adjustments
+ *                             for box model calculations.
+ * @returns {string} The computed width or height of the element in pixels (e.g., "100px").
+ *
+ * @throws {TypeError} Throws an error if the provided element is not a valid DOM element.
+ *
+ * @example
+ * const element = document.getElementById('myElement');
+ * const width = getWidthOrHeight(element, 'width');
+ * console.log(width); // Outputs the width of the element in pixels.
+ *
+ * @example
+ * const height = getWidthOrHeight(element, 'height', true);
+ * console.log(height); // Outputs the height of the element in pixels with adjustments.
+ */
 function getWidthOrHeight( elem, dimension, extra ) {
 
 	// Start with computed style
@@ -7143,6 +8337,23 @@ jQuery.fn.extend( {
 } );
 
 
+/**
+ * Creates a new Tween instance for animating a property of a DOM element.
+ *
+ * @param {HTMLElement} elem - The DOM element to be animated.
+ * @param {Object} options - An object containing options for the animation.
+ * @param {string} prop - The property of the element to animate (e.g., 'opacity', 'width').
+ * @param {number} end - The end value of the property being animated.
+ * @param {Function} easing - A function that defines the easing of the animation.
+ *
+ * @returns {Tween} A new instance of Tween.
+ *
+ * @throws {TypeError} Throws an error if the provided element is not a valid DOM element.
+ *
+ * @example
+ * const myElement = document.getElementById('myElement');
+ * const animation = Tween(myElement, { duration: 1000 }, 'opacity', 1, easingFunction);
+ */
 function Tween( elem, options, prop, end, easing ) {
 	return new Tween.prototype.init( elem, options, prop, end, easing );
 }
@@ -7266,6 +8477,27 @@ var
 	rfxtypes = /^(?:toggle|show|hide)$/,
 	rrun = /queueHooks$/;
 
+/**
+ * Continuously schedules the animation frame or sets a timeout
+ * based on the visibility of the document and the availability
+ * of the requestAnimationFrame method.
+ *
+ * This function checks if an animation is in progress. If it is,
+ * it will either request the next animation frame if the document
+ * is visible and requestAnimationFrame is supported, or it will
+ * set a timeout to call itself after a specified interval.
+ *
+ * It also calls jQuery's tick method to advance the animation
+ * queue.
+ *
+ * @throws {Error} Throws an error if the animation is attempted
+ * to be scheduled when not in progress.
+ *
+ * @example
+ * // To start scheduling animations, ensure that inProgress is true
+ * inProgress = true;
+ * schedule();
+ */
 function schedule() {
 	if ( inProgress ) {
 		if ( document.hidden === false && window.requestAnimationFrame ) {
@@ -7279,6 +8511,20 @@ function schedule() {
 }
 
 // Animations created synchronously will run synchronously
+/**
+ * Creates a timestamp for the current time and sets a timeout to reset the
+ * timestamp after a short delay. This function is useful for tracking
+ * animation frames or other time-sensitive operations.
+ *
+ * @function createFxNow
+ * @returns {number} The current timestamp in milliseconds since the Unix epoch.
+ *
+ * @example
+ * const currentTime = createFxNow();
+ * console.log(currentTime); // Outputs the current timestamp.
+ *
+ * @throws {Error} Throws an error if the timeout cannot be set.
+ */
 function createFxNow() {
 	window.setTimeout( function() {
 		fxNow = undefined;
@@ -7287,6 +8533,25 @@ function createFxNow() {
 }
 
 // Generate parameters to create a standard animation
+/**
+ * Generates a CSS style object with specified properties based on the provided type.
+ *
+ * This function creates an object that contains CSS properties for margin, padding,
+ * and optionally width and opacity, depending on the parameters provided.
+ *
+ * @param {string} type - The value to be assigned to the CSS properties (e.g., 'auto', '0', etc.).
+ * @param {boolean} includeWidth - A flag indicating whether to include width and opacity in the generated styles.
+ *                                 If true, width and opacity will be included; otherwise, they will be omitted.
+ *
+ * @returns {Object} An object containing the generated CSS properties and their values.
+ *
+ * @example
+ * // Example usage:
+ * const styles = genFx('100%', true);
+ * console.log(styles); // { height: '100%', marginTop: '100%', paddingTop: '100%', width: '100%', opacity: '100%' }
+ *
+ * @throws {TypeError} Throws an error if the type is not a string or if includeWidth is not a boolean.
+ */
 function genFx( type, includeWidth ) {
 	var which,
 		i = 0,
@@ -7307,6 +8572,28 @@ function genFx( type, includeWidth ) {
 	return attrs;
 }
 
+/**
+ * Creates a tween for a specific property of an animation.
+ *
+ * This function iterates through the available tweeners for the specified property
+ * and returns the first tween that is successfully created. It allows for custom
+ * animations to be defined based on the provided value and property.
+ *
+ * @param {number} value - The target value for the property being animated.
+ * @param {string} prop - The name of the property to animate.
+ * @param {Object} animation - The animation object that contains context for the tween.
+ * @returns {Object|null} Returns the created tween object if successful, otherwise null.
+ *
+ * @throws {Error} Throws an error if the animation object is invalid or if no tweeners are found.
+ *
+ * @example
+ * const tween = createTween(100, 'opacity', animationInstance);
+ * if (tween) {
+ *     console.log('Tween created:', tween);
+ * } else {
+ *     console.log('No tween created.');
+ * }
+ */
 function createTween( value, prop, animation ) {
 	var tween,
 		collection = ( Animation.tweeners[ prop ] || [] ).concat( Animation.tweeners[ "*" ] ),
@@ -7321,6 +8608,26 @@ function createTween( value, prop, animation ) {
 	}
 }
 
+/**
+ * A prefilter function for animations that handles show/hide effects
+ * and manages the animation queue for the specified element.
+ *
+ * This function modifies the properties of the element based on the
+ * provided options and manages the display state during animations.
+ *
+ * @param {HTMLElement} elem - The DOM element to which the animation is applied.
+ * @param {Object} props - An object containing CSS properties to animate.
+ * @param {Object} opts - Options for the animation, including queue management.
+ * @throws {Error} Throws an error if the element is not a valid DOM element.
+ * @returns {void}
+ *
+ * @example
+ * // Example usage of defaultPrefilter
+ * defaultPrefilter(document.getElementById('myElement'), { opacity: 1 }, { queue: true });
+ *
+ * This will animate the opacity of the element with ID 'myElement' to 1,
+ * managing the animation queue appropriately.
+ */
 function defaultPrefilter( elem, props, opts ) {
 	var prop, value, toggle, hooks, oldfire, propTween, restoreDisplay, display,
 		isBox = "width" in props || "height" in props,
@@ -7493,6 +8800,25 @@ function defaultPrefilter( elem, props, opts ) {
 	}
 }
 
+/**
+ * Filters and processes CSS properties and their associated easing functions.
+ * This function transforms property names to camelCase, handles special easing,
+ * and expands properties if necessary.
+ *
+ * @param {Object} props - An object containing CSS properties to be filtered.
+ * @param {Object} specialEasing - An object that maps property names to their special easing functions.
+ *
+ * @throws {TypeError} Throws an error if `props` is not an object or if `specialEasing` is not an object.
+ *
+ * @example
+ * const properties = {
+ *   'margin-top': '10px',
+ *   'opacity': [0, 'linear']
+ * };
+ * const easing = {};
+ * propFilter(properties, easing);
+ * // properties will be modified to use camelCase keys and appropriate easing.
+ */
 function propFilter( props, specialEasing ) {
 	var index, name, easing, value, hooks;
 
@@ -7530,6 +8856,27 @@ function propFilter( props, specialEasing ) {
 	}
 }
 
+/**
+ * Creates a new animation instance for the specified element with the given properties and options.
+ *
+ * @param {HTMLElement} elem - The DOM element to animate.
+ * @param {Object} properties - A set of CSS properties to animate.
+ * @param {Object} options - Configuration options for the animation.
+ * @param {number} options.duration - The duration of the animation in milliseconds.
+ * @param {Function} [options.easing] - The easing function to use for the animation.
+ * @param {Function} [options.start] - A callback function that is called when the animation starts.
+ * @param {Function} [options.progress] - A callback function that is called on each animation tick.
+ * @param {Function} [options.done] - A callback function that is called when the animation completes successfully.
+ * @param {Function} [options.fail] - A callback function that is called if the animation fails.
+ * @param {Function} [options.always] - A callback function that is called regardless of the animation's success or failure.
+ * @returns {jQuery.Promise} A promise object that represents the state of the animation.
+ *
+ * @example
+ * // Example usage of the Animation function
+ * Animation($('#myElement'), { opacity: 1 }, { duration: 400, easing: 'swing' });
+ *
+ * @throws {Error} Throws an error if the element is not valid or if properties are not defined.
+ */
 function Animation( elem, properties, options ) {
 	var result,
 		stopped,
@@ -8245,16 +9592,78 @@ jQuery.each( [
 
 	// Strip and collapse whitespace according to HTML spec
 	// https://infra.spec.whatwg.org/#strip-and-collapse-ascii-whitespace
+	/**
+	 * Strips whitespace from the beginning and end of a string and collapses
+	 * multiple whitespace characters into a single space.
+	 *
+	 * This function utilizes a regular expression to match non-HTML whitespace
+	 * characters and returns a cleaned-up version of the input string.
+	 *
+	 * @param {string} value - The input string to be processed.
+	 * @returns {string} The processed string with leading and trailing whitespace
+	 *                  removed and multiple spaces collapsed into a single space.
+	 *
+	 * @example
+	 * // returns "Hello World"
+	 * stripAndCollapse("   Hello    World   ");
+	 *
+	 * @throws {TypeError} If the input value is not a string.
+	 */
 	function stripAndCollapse( value ) {
 		var tokens = value.match( rnothtmlwhite ) || [];
 		return tokens.join( " " );
 	}
 
 
+/**
+ * Retrieves the value of the "class" attribute from a given HTML element.
+ *
+ * This function checks if the provided element has a method to get attributes.
+ * If it does, it attempts to retrieve the value of the "class" attribute.
+ * If the attribute is not present or the element does not support attribute retrieval,
+ * an empty string is returned.
+ *
+ * @param {Element} elem - The HTML element from which to retrieve the class attribute.
+ * @returns {string} The value of the "class" attribute, or an empty string if not found.
+ *
+ * @example
+ * const element = document.getElementById('myElement');
+ * const className = getClass(element);
+ * console.log(className); // Outputs the class name of the element or an empty string.
+ */
 function getClass( elem ) {
 	return elem.getAttribute && elem.getAttribute( "class" ) || "";
 }
 
+/**
+ * Converts a given value into an array. The function checks the type of the input value
+ * and processes it accordingly.
+ *
+ * If the input value is an array, it returns the array as is. If the input value is a string,
+ * it attempts to match the string against a regular expression (rnothtmlwhite) and returns
+ * the resulting matches as an array. If the input value is neither an array nor a string,
+ * it returns an empty array.
+ *
+ * @param {Array|string} value - The value to be converted into an array.
+ * @returns {Array} - The resulting array, which can be the original array,
+ *                   matches from the string, or an empty array.
+ *
+ * @example
+ * // Returns: [1, 2, 3]
+ * classesToArray([1, 2, 3]);
+ *
+ * @example
+ * // Returns: ['a', 'b', 'c']
+ * classesToArray('a b c');
+ *
+ * @example
+ * // Returns: []
+ * classesToArray(123);
+ *
+ * @example
+ * // Returns: []
+ * classesToArray(null);
+ */
 function classesToArray( value ) {
 	if ( Array.isArray( value ) ) {
 		return value;
@@ -8882,6 +10291,30 @@ var
 	rsubmitterTypes = /^(?:submit|button|image|reset|file)$/i,
 	rsubmittable = /^(?:input|select|textarea|keygen)/i;
 
+/**
+ * Recursively builds a set of parameters for serialization.
+ * This function handles arrays, objects, and scalar values,
+ * allowing for flexible parameter construction based on the
+ * provided prefix.
+ *
+ * @param {string} prefix - The prefix to use for the parameter names.
+ * @param {Object|Array} obj - The object or array to serialize.
+ * @param {boolean} traditional - A flag indicating whether to use traditional
+ *                                serialization (treating arrays as scalars).
+ * @param {function} add - A callback function that adds the serialized
+ *                         parameter to the final output.
+ *
+ * @throws {TypeError} Throws an error if the provided obj is neither
+ *                     an object nor an array.
+ *
+ * @example
+ * // Example usage:
+ * const params = [];
+ * buildParams('user', { name: 'John', age: 30 }, false, (key, value) => {
+ *   params.push(`${key}=${value}`);
+ * });
+ * console.log(params); // Output: ['user[name]=John', 'user[age]=30']
+ */
 function buildParams( prefix, obj, traditional, add ) {
 	var name;
 
@@ -9036,6 +10469,35 @@ var
 	originAnchor.href = location.href;
 
 // Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
+/**
+ * Creates a function that adds a callback to a structure based on the provided data type expression.
+ *
+ * @param {Object} structure - An object that holds arrays of functions categorized by data types.
+ *
+ * @returns {Function} A function that accepts a data type expression and a callback function.
+ *
+ * The returned function can be called with either:
+ * - A string representing the data type(s) (e.g., "json", "xml"), or
+ * - A callback function directly, in which case the data type expression defaults to "*".
+ *
+ * The callback function will be added to the structure under the specified data types. If the data type starts with a "+",
+ * the function will be prepended to the array; otherwise, it will be appended.
+ *
+ * @example
+ * const structure = {};
+ * const add = addToPrefiltersOrTransports(structure);
+ *
+ * // Adding a callback for "json" data type
+ * add("json", function() { console.log("JSON callback"); });
+ *
+ * // Adding a callback for multiple data types
+ * add("xml json", function() { console.log("XML or JSON callback"); });
+ *
+ * // Adding a callback without specifying a data type (defaults to "*")
+ * add(function() { console.log("Default callback"); });
+ *
+ * @throws {TypeError} Throws an error if the provided dataTypeExpression is not a string or function.
+ */
 function addToPrefiltersOrTransports( structure ) {
 
 	// dataTypeExpression is optional and defaults to "*"
@@ -9070,11 +10532,49 @@ function addToPrefiltersOrTransports( structure ) {
 }
 
 // Base inspection function for prefilters and transports
+/**
+ * Inspects prefilters or transports based on the provided structure and options.
+ *
+ * This function iterates through the prefilters or transports defined in the structure,
+ * applying them to the given options and originalOptions. It determines the appropriate
+ * data type or transport to use based on the results of the prefilter functions.
+ *
+ * @param {Object} structure - The structure containing prefilters or transports to inspect.
+ * @param {Object} options - The options object that contains settings for the request.
+ * @param {Object} originalOptions - The original options object passed to the request.
+ * @param {jQuery.jqXHR} jqXHR - The jQuery XMLHttpRequest object associated with the request.
+ *
+ * @returns {string|undefined} The selected data type or transport, or undefined if none is found.
+ *
+ * @throws {TypeError} Throws an error if the structure is not an object or if options are invalid.
+ *
+ * @example
+ * const selectedTransport = inspectPrefiltersOrTransports(transports, requestOptions, originalRequestOptions, jqXHR);
+ * console.log(selectedTransport); // Logs the selected transport type or undefined.
+ */
 function inspectPrefiltersOrTransports( structure, options, originalOptions, jqXHR ) {
 
 	var inspected = {},
 		seekingTransport = ( structure === transports );
 
+	/**
+	 * Inspects the provided data type and determines the appropriate transport
+	 * or prefilter for handling the data.
+	 *
+	 * This function recursively inspects the data types and their associated
+	 * prefilters or factories, updating the options for data types as necessary.
+	 *
+	 * @param {string} dataType - The data type to inspect.
+	 * @returns {string|undefined} Returns the selected transport type if found,
+	 *                            otherwise returns undefined.
+	 *
+	 * @throws {TypeError} Throws an error if the provided dataType is not a string.
+	 *
+	 * @example
+	 * // Example usage of inspect function
+	 * const transport = inspect('json');
+	 * console.log(transport); // Outputs the selected transport type or undefined.
+	 */
 	function inspect( dataType ) {
 		var selected;
 		inspected[ dataType ] = true;
@@ -9099,6 +10599,22 @@ function inspectPrefiltersOrTransports( structure, options, originalOptions, jqX
 // A special extend for ajax options
 // that takes "flat" options (not to be deep extended)
 // Fixes #9887
+/**
+ * Extends the properties of a target object with those from a source object.
+ * This function allows for deep merging of properties based on the flat options defined in jQuery's AJAX settings.
+ *
+ * @param {Object} target - The target object to be extended.
+ * @param {Object} src - The source object containing properties to extend the target.
+ * @returns {Object} The extended target object.
+ *
+ * @throws {TypeError} Throws an error if the target or source is not an object.
+ *
+ * @example
+ * const target = { a: 1, b: 2 };
+ * const source = { b: 3, c: 4 };
+ * const result = ajaxExtend(target, source);
+ * // result is now { a: 1, b: 3, c: 4 }
+ */
 function ajaxExtend( target, src ) {
 	var key, deep,
 		flatOptions = jQuery.ajaxSettings.flatOptions || {};
@@ -9118,6 +10634,40 @@ function ajaxExtend( target, src ) {
 /* Handles responses to an ajax request:
  * - finds the right dataType (mediates between content-type and expected dataType)
  * - returns the corresponding response
+ */
+/**
+ * Handles the responses from an AJAX request by determining the appropriate data type
+ * based on the provided content type and response data.
+ *
+ * This function processes the response data according to the expected data types,
+ * checking for known content types and applying converters if necessary.
+ *
+ * @param {Object} s - The settings object containing configuration options for the AJAX request.
+ * @param {Object} jqXHR - The jQuery XMLHttpRequest object representing the AJAX request.
+ * @param {Object} responses - An object containing the responses keyed by data type.
+ *
+ * @returns {*} The response data corresponding to the determined data type.
+ *
+ * @throws {Error} Throws an error if no valid data type is found for the response.
+ *
+ * @example
+ * const settings = {
+ *   contents: {
+ *     json: /json/,
+ *     xml: /xml/
+ *   },
+ *   dataTypes: ["*", "json"],
+ *   converters: {
+ *     "text json": JSON.parse
+ *   }
+ * };
+ *
+ * const response = ajaxHandleResponses(settings, jqXHR, {
+ *   json: '{"key": "value"}',
+ *   xml: '<key>value</key>'
+ * });
+ *
+ * console.log(response); // Outputs the parsed JSON object
  */
 function ajaxHandleResponses( s, jqXHR, responses ) {
 
@@ -9177,6 +10727,25 @@ function ajaxHandleResponses( s, jqXHR, responses ) {
 /* Chain conversions given the request and the original response
  * Also sets the responseXXX fields on the jqXHR instance
  */
+/**
+ * Converts the response data from one data type to another based on the provided converters.
+ *
+ * This function processes the response according to the specified data types and applies any necessary
+ * data filters or converters. It handles both direct conversions and intermediate conversions when a direct
+ * converter is not available.
+ *
+ * @param {Object} s - The settings object containing configuration for the conversion.
+ * @param {*} response - The response data to be converted.
+ * @param {Object} jqXHR - The jQuery XMLHttpRequest object that contains response fields.
+ * @param {boolean} isSuccess - Indicates whether the request was successful.
+ * @returns {Object} An object containing the conversion state and the converted data.
+ * @throws {Error} Throws an error if a conversion fails and `s.throws` is true.
+ *
+ * @example
+ * const settings = {
+ *   dataTypes: ['json', 'xml'],
+ *   converters: {
+ *     'json xml': function(data) { /* conversion logic */
 function ajaxConvert( s, response, jqXHR, isSuccess ) {
 	var conv2, current, conv, tmp, prev,
 		converters = {},
@@ -9693,6 +11262,26 @@ jQuery.extend( {
 		}
 
 		// Callback for when everything is done
+		/**
+		 * Handles the completion of an AJAX request.
+		 *
+		 * This function processes the response from an AJAX call, determines success or failure,
+		 * and triggers the appropriate callbacks based on the result. It also manages the state
+		 * of the jqXHR object and handles global AJAX events.
+		 *
+		 * @param {number} status - The HTTP status code of the response.
+		 * @param {string} nativeStatusText - The status text returned by the server.
+		 * @param {Object} responses - The responses received from the server.
+		 * @param {string} headers - The response headers as a string.
+		 *
+		 * @throws {Error} Throws an error if the AJAX request fails.
+		 *
+		 * @example
+		 * // Example usage of done function
+		 * done(200, "OK", { data: "response data" }, "Content-Type: application/json");
+		 *
+		 * @returns {void}
+		 */
 		function done( status, nativeStatusText, responses, headers ) {
 			var isSuccess, success, error, response, modified,
 				statusText = nativeStatusText;

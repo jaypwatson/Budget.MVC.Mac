@@ -22,6 +22,29 @@
         adapters,
         data_validation = "unobtrusiveValidation";
 
+    /**
+     * Sets the validation values for a specified rule in the options object.
+     *
+     * This function updates the rules and messages in the provided options object
+     * based on the given rule name and value. If a message is present in the options,
+     * it will also update the corresponding message for the specified rule.
+     *
+     * @param {Object} options - The options object containing validation rules and messages.
+     * @param {string} ruleName - The name of the validation rule to be set.
+     * @param {*} value - The value to be assigned to the specified validation rule.
+     *
+     * @throws {TypeError} Throws an error if options is not an object or if ruleName is not a string.
+     *
+     * @example
+     * const options = {
+     *   rules: {},
+     *   messages: {},
+     *   message: "This field is required."
+     * };
+     * setValidationValues(options, 'required', true);
+     * console.log(options.rules.required); // true
+     * console.log(options.messages.required); // "This field is required."
+     */
     function setValidationValues(options, ruleName, value) {
         options.rules[ruleName] = value;
         if (options.message) {
@@ -29,19 +52,85 @@
         }
     }
 
+    /**
+     * Splits a string into an array of substrings, trimming whitespace from both ends of the string
+     * and around each substring.
+     *
+     * This function removes leading and trailing whitespace from the input string and then splits
+     * the string by commas, allowing for optional whitespace around the commas.
+     *
+     * @param {string} value - The input string to be split and trimmed.
+     * @returns {string[]} An array of trimmed substrings obtained from splitting the input string.
+     *
+     * @example
+     * const result = splitAndTrim("  apple, banana , cherry  ");
+     * console.log(result); // Output: ["apple", "banana", "cherry"]
+     *
+     * @throws {TypeError} If the input value is not a string.
+     */
     function splitAndTrim(value) {
         return value.replace(/^\s+|\s+$/g, "").split(/\s*,\s*/g);
     }
 
+    /**
+     * Escapes special characters in a string to ensure it can be safely used as an attribute value in HTML.
+     *
+     * This function replaces characters that have special meanings in HTML attributes with their escaped counterparts.
+     * The characters that are escaped include:
+     * `!"#$%&'()*+,./:;<=>?@[\]^`{|}~`.
+     *
+     * @param {string} value - The string to be escaped.
+     * @returns {string} The escaped string, safe for use as an attribute value.
+     *
+     * @example
+     * const escapedValue = escapeAttributeValue('Hello "World" & Friends!');
+     * console.log(escapedValue); // Outputs: Hello \"World\" &amp; Friends!
+     */
     function escapeAttributeValue(value) {
         // As mentioned on http://api.jquery.com/category/selectors/
         return value.replace(/([!"#$%&'()*+,./:;<=>?@\[\\\]^`{|}~])/g, "\\$1");
     }
 
+    /**
+     * Retrieves the prefix of a given field name by extracting the substring
+     * from the start of the field name up to the last occurrence of a dot (.)
+     * character, inclusive.
+     *
+     * This function is useful for obtaining the model prefix in scenarios
+     * where field names are structured with a dot notation.
+     *
+     * @param {string} fieldName - The field name from which to extract the prefix.
+     * @returns {string} The prefix of the field name, including the last dot.
+     *
+     * @example
+     * const prefix = getModelPrefix("user.profile.name");
+     * console.log(prefix); // Output: "user.profile."
+     *
+     * @throws {TypeError} Throws an error if the provided fieldName is not a string.
+     */
     function getModelPrefix(fieldName) {
         return fieldName.substr(0, fieldName.lastIndexOf(".") + 1);
     }
 
+    /**
+     * Appends a specified prefix to a given value if the value starts with "*.".
+     *
+     * This function checks if the provided value begins with the string "*." and, if so,
+     * replaces that part of the string with the provided prefix. The modified or original
+     * value is then returned.
+     *
+     * @param {string} value - The input string that may contain the prefix to be replaced.
+     * @param {string} prefix - The prefix to append in place of "*." if it is found at the start of the value.
+     * @returns {string} The modified string with the prefix appended, or the original string if no changes were made.
+     *
+     * @example
+     * // Returns 'modelName' since '*.' is replaced with 'model'
+     * appendModelPrefix('*.name', 'model');
+     *
+     * @example
+     * // Returns '*.name' since no replacement occurs
+     * appendModelPrefix('*.name', 'prefix');
+     */
     function appendModelPrefix(value, prefix) {
         if (value.indexOf("*.") === 0) {
             value = value.replace("*.", prefix);
@@ -49,6 +138,24 @@
         return value;
     }
 
+    /**
+     * Handles error messages for form validation.
+     * This function updates the UI to reflect validation errors associated with a specific input element.
+     *
+     * @param {Object} error - The error object containing validation information.
+     * @param {jQuery} inputElement - The jQuery object representing the input element that triggered the error.
+     * @this {HTMLElement} - The form element that contains the input element.
+     *
+     * @throws {TypeError} Throws an error if the inputElement is not a valid jQuery object.
+     *
+     * @example
+     * // Example usage within a form submission handler
+     * $('form').on('submit', function(event) {
+     *     if (!isValid) {
+     *         onError(validationError, $('#inputField'));
+     *     }
+     * });
+     */
     function onError(error, inputElement) {  // 'this' is the form element
         var container = $(this).find("[data-valmsg-for='" + escapeAttributeValue(inputElement[0].name) + "']"),
             replaceAttrValue = container.attr("data-valmsg-replace"),
@@ -66,6 +173,24 @@
         }
     }
 
+    /**
+     * Handles validation errors by displaying them in a summary container.
+     * This function is intended to be used as an event handler for form validation errors.
+     *
+     * @param {Event} event - The event object associated with the error.
+     * @param {Object} validator - The validator object containing the error list.
+     * @this {HTMLElement} - The form element that triggered the validation.
+     *
+     * @throws {TypeError} Throws an error if the validator is not an object or if the expected properties are missing.
+     *
+     * @example
+     * // Example usage in a form submission context
+     * $('form').on('submit', function(event) {
+     *     event.preventDefault();
+     *     // Assume 'validator' is defined and contains validation logic
+     *     onErrors(event, validator);
+     * });
+     */
     function onErrors(event, validator) {  // 'this' is the form element
         var container = $(this).find("[data-valmsg-summary=true]"),
             list = container.find("ul");
@@ -80,6 +205,24 @@
         }
     }
 
+    /**
+     * Handles the success scenario for form validation.
+     * This function is triggered when a validation error is resolved.
+     *
+     * @param {jQuery} error - The jQuery object representing the error element.
+     *                          This element is expected to contain data related to the validation error.
+     *
+     * @returns {void} - This function does not return a value.
+     *
+     * @throws {Error} - Throws an error if the provided error parameter is not a jQuery object.
+     *
+     * @example
+     * // Example usage of onSuccess function
+     * onSuccess($("#errorElement"));
+     *
+     * The function will check for an associated unobtrusive container and update its classes
+     * and contents based on the validation state.
+     */
     function onSuccess(error) {  // 'this' is the form element
         var container = error.data("unobtrusiveContainer");
 
@@ -96,6 +239,22 @@
         }
     }
 
+    /**
+     * Resets the validation state of a form element.
+     *
+     * This function is triggered when a reset event occurs on the form. It ensures that
+     * the validation messages and error states are cleared, allowing the form to be used
+     * again without displaying previous validation errors.
+     *
+     * @param {Event} event - The event object representing the reset event.
+     * @throws {Error} Throws an error if the form validator is not initialized.
+     *
+     * @example
+     * // Example usage in a form element
+     * $('#myForm').on('reset', onReset);
+     *
+     * @returns {void}
+     */
     function onReset(event) {  // 'this' is the form element
         var $form = $(this),
             key = '__jquery_unobtrusive_validation_form_reset';
@@ -121,6 +280,27 @@
             .removeData("unobtrusiveContainer");
     }
 
+    /**
+     * Initializes and retrieves validation information for a given form.
+     *
+     * This function checks if the form already has validation information stored.
+     * If not, it sets up the default validation options and attaches event handlers
+     * for error handling, success handling, and form reset.
+     *
+     * @param {HTMLElement} form - The form element to validate.
+     * @returns {Object} An object containing validation options and methods.
+     * @property {Object} options - Configuration options for jQuery Validate.
+     * @property {Function} attachValidation - Attaches validation to the form.
+     * @property {Function} validate - Validates the form and returns the result.
+     *
+     * @example
+     * const formElement = document.getElementById('myForm');
+     * const validation = validationInfo(formElement);
+     * validation.attachValidation();
+     * const isValid = validation.validate();
+     *
+     * @throws {Error} Throws an error if the form element is not valid.
+     */
     function validationInfo(form) {
         var $form = $(form),
             result = $form.data(data_validation),

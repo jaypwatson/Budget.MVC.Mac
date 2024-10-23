@@ -20,6 +20,16 @@ namespace Budget.Mvc.Mac.Repositories
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Retrieves a list of transactions from the database.
+        /// </summary>
+        /// <returns>A list of <see cref="Transaction"/> objects representing all transactions.</returns>
+        /// <remarks>
+        /// This method establishes a connection to the database using a connection string defined in the configuration.
+        /// It executes a SQL query that selects various fields from the Transactions table, including the amount, category ID, date, ID, transaction type, name, and the corresponding category name from the Category table.
+        /// The results are then mapped to a list of <see cref="Transaction"/> objects and returned.
+        /// The method uses Dapper for executing the query and mapping the results.
+        /// </remarks>
         public List<Transaction> GetTransactions()
         {
             using (IDbConnection connection = new SqliteConnection(_configuration.GetConnectionString("ConnectionString")))
