@@ -18,6 +18,23 @@
 
 ( function() {
 
+	/**
+	 * Strips HTML tags and punctuation from a given string.
+	 *
+	 * This function takes a string input, removes any HTML tags,
+	 * replaces non-breaking spaces with regular spaces, and eliminates
+	 * punctuation characters. The result is a clean string devoid of
+	 * HTML markup and unnecessary symbols.
+	 *
+	 * @param {string} value - The input string from which HTML tags
+	 *                         and punctuation will be removed.
+	 * @returns {string} The cleaned string without HTML tags and
+	 *                  punctuation.
+	 *
+	 * @example
+	 * const result = stripHtml("<p>Hello, world!</p>");
+	 * console.log(result); // Outputs: "Hello world"
+	 */
 	function stripHtml( value ) {
 
 		// Remove html tags and space chars
@@ -209,6 +226,21 @@ $.validator.addMethod( "cifES", function( value, element ) {
 		control_digit,
 		control_letter;
 
+	/**
+	 * Determines whether a given number is odd.
+	 *
+	 * This function checks if the provided number is not divisible by 2,
+	 * returning true if the number is odd and false if it is even.
+	 *
+	 * @param {number} n - The number to be checked.
+	 * @returns {boolean} Returns true if the number is odd, false otherwise.
+	 *
+	 * @example
+	 * isOdd(3); // returns true
+	 * isOdd(4); // returns false
+	 *
+	 * @throws {TypeError} Throws an error if the input is not a number.
+	 */
 	function isOdd( n ) {
 		return n % 2 === 0;
 	}

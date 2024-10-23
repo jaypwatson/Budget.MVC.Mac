@@ -67,6 +67,27 @@ $.extend( $.fn, {
 					// Prevent form submit to be able to see console output
 					event.preventDefault();
 				}
+				/**
+				 * Handles the submission of a form by managing the hidden input and invoking the user-defined submit handler.
+				 *
+				 * This function checks if a submit button is defined and if a submit handler is provided or if the form has been submitted.
+				 * If so, it creates a hidden input element to replace the missing submit button. It then calls the user-defined submit handler
+				 * if it exists, passing the current form and the event object. After the handler is executed, it cleans up by removing the
+				 * hidden input if it was created.
+				 *
+				 * @function handle
+				 * @param {Event} event - The event object associated with the form submission.
+				 * @returns {boolean|undefined} Returns true if the form can be submitted, false if not, or the result of the submit handler if defined.
+				 *
+				 * @throws {Error} Throws an error if the validator settings are not properly configured.
+				 *
+				 * @example
+				 * // Example usage:
+				 * $(form).on('submit', function(event) {
+				 *     event.preventDefault();
+				 *     handle(event);
+				 * });
+				 */
 				function handle() {
 					var hidden, result;
 
@@ -408,6 +429,21 @@ $.extend( $.validator, {
 				rules[ key ] = $.validator.normalizeRule( value );
 			} );
 
+			/**
+			 * Delegates an event to the appropriate validation handler based on the event type.
+			 * This function is designed to work with elements that may have a `contenteditable` attribute
+			 * and are part of a form. It sets the form reference and invokes the corresponding validation
+			 * method if applicable.
+			 *
+			 * @param {Event} event - The event object that triggered the delegate function.
+			 *
+			 * @throws {Error} Throws an error if the form cannot be determined or if the validator is not found.
+			 *
+			 * @example
+			 * // Example usage of the delegate function
+			 * const inputElement = document.querySelector('input[name="username"]');
+			 * inputElement.addEventListener('blur', delegate);
+			 */
 			function delegate( event ) {
 
 				// Set form expando on contenteditable
